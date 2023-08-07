@@ -97,6 +97,16 @@ vault_secret="/etc/mysql/vault-keyring-secret/keyring_vault.conf"
 if [ -f "$vault_secret" ]; then
 	sed -i "/\[mysqld\]/a early-plugin-load=keyring_vault.so" $CFG
 	sed -i "/\[mysqld\]/a keyring_vault_config=$vault_secret" $CFG
+	sed -i "/\[mysqld\]/a default_table_encryption=ON" $CFG
+	sed -i "/\[mysqld\]/a table_encryption_privilege_check=ON" $CFG
+	sed -i "/\[mysqld\]/a innodb_undo_log_encrypt=ON" $CFG
+	sed -i "/\[mysqld\]/a innodb_redo_log_encrypt=ON" $CFG
+	sed -i "/\[mysqld\]/a binlog_encryption=ON" $CFG
+	sed -i "/\[mysqld\]/a binlog_rotate_encryption_master_key_at_startup=ON" $CFG
+	sed -i "/\[mysqld\]/a innodb_temp_tablespace_encrypt=ON" $CFG
+	sed -i "/\[mysqld\]/a innodb_parallel_dblwr_encrypt=ON" $CFG
+	sed -i "/\[mysqld\]/a innodb_encrypt_online_alter_logs=ON" $CFG
+	sed -i "/\[mysqld\]/a encrypt_tmp_files=ON" $CFG
 fi
 
 file_env 'XTRABACKUP_PASSWORD' 'xtrabackup'
@@ -139,7 +149,6 @@ elif [ -n "$DISCOVERY_SERVICE" ]; then
 	sed -r "s|^[#]?wsrep_cluster_name=.*$|wsrep_cluster_name=${CLUSTER_NAME}|" "${CFG}" 1<> "${CFG}"
 	sed -r "s|^[#]?wsrep_cluster_address=.*$|wsrep_cluster_address=gcomm://${CLUSTER_JOIN}|" "${CFG}" 1<> "${CFG}"
 	sed -r "s|^[#]?wsrep_node_incoming_address=.*$|wsrep_node_incoming_address=${NODE_NAME}:${NODE_PORT}|" "${CFG}" 1<> "${CFG}"
-	sed -r "s|^[#]?wsrep_sst_auth=.*$|wsrep_sst_auth='xtrabackup:${XTRABACKUP_PASSWORD}'|" "${CFG}" 1<> "${CFG}"
 
 	/usr/bin/clustercheckcron clustercheck "${CLUSTERCHECK_PASSWORD}" 1 /var/lib/mysql/clustercheck.log 1 &
 
@@ -148,7 +157,6 @@ else
 	NODE_IP=$(hostname -I | awk ' { print $1 } ')
 	sed -r "s|^[#]?wsrep_node_address=.*$|wsrep_node_address=${NODE_IP}|" "${CFG}" 1<> "${CFG}"
 	sed -r "s|^[#]?wsrep_node_incoming_address=.*$|wsrep_node_incoming_address=${NODE_NAME}:${NODE_PORT}|" "${CFG}" 1<> "${CFG}"
-	sed -r "s|^[#]?wsrep_sst_auth=.*$|wsrep_sst_auth='xtrabackup:${XTRABACKUP_PASSWORD}'|" "${CFG}" 1<> "${CFG}"
 
 	if [[ -n "${CLUSTER_JOIN}" ]]; then
 		sed -r "s|^[#]?wsrep_cluster_address=.*$|wsrep_cluster_address=gcomm://${CLUSTER_JOIN}|" "${CFG}" 1<> "${CFG}"
